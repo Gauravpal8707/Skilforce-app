@@ -1,0 +1,423 @@
+package com.skillforge.app.ui.coursedetail
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import com.skillforge.app.data.model.Course
+import com.skillforge.app.data.model.Lesson
+import com.skillforge.app.data.repository.SkillForgeRepository
+import com.skillforge.app.ui.theme.BorderLight
+import com.skillforge.app.ui.theme.OrangeAccent
+import com.skillforge.app.ui.theme.StarYellow
+import com.skillforge.app.ui.theme.SurfaceMuted
+import com.skillforge.app.ui.theme.TealHeroEnd
+import com.skillforge.app.ui.theme.TealHeroStart
+import com.skillforge.app.ui.theme.TealLight
+import com.skillforge.app.ui.theme.TealPrimary
+import com.skillforge.app.ui.theme.TextMuted
+import com.skillforge.app.ui.theme.TextPrimary
+import com.skillforge.app.ui.theme.TextSecondary
+
+@Composable
+fun CourseDetailScreen(
+    course: Course,
+    repository: SkillForgeRepository,
+    onBack: () -> Unit,
+    onLessonClick: (String) -> Unit
+) {
+    val totalMinutes = repository.totalLessonMinutes(course)
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = 88.dp)
+        ) {
+            CourseHero(course = course, onBack = onBack)
+            Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+                Spacer(modifier = Modifier.height(20.dp))
+                Text(
+                    text = course.title,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                course.subtitle?.let {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary
+                    )
+                }
+                Spacer(modifier = Modifier.height(14.dp))
+                CourseMetaRow(course = course)
+                Spacer(modifier = Modifier.height(20.dp))
+                InstructorCard(course = course)
+                Spacer(modifier = Modifier.height(24.dp))
+                course.description?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary,
+                        lineHeight = 22.sp
+                    )
+                }
+                Spacer(modifier = Modifier.height(28.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Course content",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "${course.lessons.size} lessons · ${totalMinutes} min",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextMuted
+                    )
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                course.lessons.forEach { lesson ->
+                    LessonRow(
+                        lesson = lesson,
+                        onClick = { if (lesson.isFree) onLessonClick(lesson.id) }
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                }
+            }
+        }
+
+        EnrollBottomBar(
+            onBack = onBack,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
+    }
+}
+
+@Composable
+private fun CourseHero(course: Course, onBack: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(220.dp)
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(TealHeroStart, TealHeroEnd)
+                )
+            )
+    ) {
+        AsyncImage(
+            model = course.thumbnailUrl,
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.2f)),
+            contentScale = ContentScale.Crop,
+            alpha = 0.35f
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(Color.White)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = TextPrimary
+                )
+            }
+            IconButton(
+                onClick = { },
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(Color.White)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.BookmarkBorder,
+                    contentDescription = "Bookmark",
+                    tint = TextPrimary
+                )
+            }
+        }
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(20.dp)
+        ) {
+            val tagLabel = course.tags.firstOrNull()?.lowercase() ?: "course"
+            Text(
+                text = "// $tagLabel",
+                style = MaterialTheme.typography.labelMedium,
+                color = TealLight,
+                fontFamily = FontFamily.Monospace,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(TealPrimary.copy(alpha = 0.25f))
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = course.title,
+                style = MaterialTheme.typography.headlineLarge,
+                color = Color.White,
+                fontWeight = FontWeight.ExtraBold
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                course.tags.take(3).forEach { tag ->
+                    Text(
+                        text = tag,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = TealPrimary,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(TealLight)
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CourseMetaRow(course: Course) {
+    val isBeginner = course.level.equals("Beginner", ignoreCase = true)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Filled.Star, null, tint = StarYellow, modifier = Modifier.size(16.dp))
+            Text(
+                text = course.rating.toString(),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(start = 4.dp)
+            )
+        }
+        Text(
+            text = "%,d".format(course.studentsEnrolled),
+            style = MaterialTheme.typography.bodyMedium,
+            color = TextSecondary
+        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Outlined.Schedule, null, tint = TextMuted, modifier = Modifier.size(16.dp))
+            Text(
+                text = "${course.durationHours}h",
+                style = MaterialTheme.typography.bodyMedium,
+                color = TextSecondary,
+                modifier = Modifier.padding(start = 4.dp)
+            )
+        }
+        Text(
+            text = course.level,
+            style = MaterialTheme.typography.labelLarge,
+            color = if (isBeginner) TealPrimary else OrangeAccent,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+private fun InstructorCard(course: Course) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .border(1.dp, BorderLight, RoundedCornerShape(16.dp))
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        AsyncImage(
+            model = course.instructor.avatarUrl,
+            contentDescription = course.instructor.name,
+            modifier = Modifier
+                .size(48.dp)
+                .clip(CircleShape),
+            contentScale = ContentScale.Crop
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = course.instructor.name,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            course.instructor.title?.let {
+                Text(text = it, style = MaterialTheme.typography.bodySmall, color = TextMuted)
+            }
+        }
+        Text(
+            text = "Follow",
+            style = MaterialTheme.typography.labelLarge,
+            color = TealPrimary,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.clickable { }
+        )
+    }
+}
+
+@Composable
+private fun LessonRow(
+    lesson: Lesson,
+    onClick: () -> Unit
+) {
+    val isLocked = !lesson.isFree
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .border(1.dp, BorderLight, RoundedCornerShape(14.dp))
+            .background(if (isLocked) SurfaceMuted else Color.White)
+            .clickable(enabled = !isLocked, onClick = onClick)
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(if (isLocked) BorderLight else TealLight),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = if (isLocked) Icons.Filled.Lock else Icons.Filled.PlayArrow,
+                contentDescription = null,
+                tint = if (isLocked) TextMuted else TealPrimary,
+                modifier = Modifier.size(if (isLocked) 18.dp else 22.dp)
+            )
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = lesson.title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = if (isLocked) TextMuted else TextPrimary
+            )
+            Text(
+                text = "${lesson.durationMinutes} min",
+                style = MaterialTheme.typography.bodySmall,
+                color = TextMuted
+            )
+        }
+        if (lesson.isFree) {
+            Text(
+                text = "FREE",
+                style = MaterialTheme.typography.labelSmall,
+                color = TealPrimary,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(TealLight)
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun EnrollBottomBar(
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shadowElevation = 8.dp,
+        color = Color.White
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 20.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Column {
+                Text(
+                    text = "PRICE",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextMuted
+                )
+                Text(
+                    text = "Free",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = TealPrimary,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Button(
+                onClick = onBack,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(52.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = TealPrimary)
+            ) {
+                Text(
+                    text = "Enroll now",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+}
